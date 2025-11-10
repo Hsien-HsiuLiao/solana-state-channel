@@ -10,7 +10,7 @@ use {
         system_program,
     },
     solana_test_validator::{TestValidator, TestValidatorGenesis},
-    spl_token::state::{Account as TokenAccount, Mint},
+  //  spl_token::state::{Account as TokenAccount, Mint},
 };
 
 const SLOTS_PER_EPOCH: u64 = 50;
@@ -34,7 +34,7 @@ impl TestValidatorContext {
         let (test_validator, payer) = TestValidatorGenesis::default()
             .epoch_schedule(epoch_schedule)
             .add_accounts(accounts)
-            .start();
+            .start(); //https://docs.rs/solana-test-validator/2.0.2/src/solana_test_validator/lib.rs.html#622-624
 
         Self {
             test_validator,
@@ -43,12 +43,12 @@ impl TestValidatorContext {
     }
 }
 
-pub fn get_token_account_balance(token_account: Account) -> u64 {
+/* pub fn get_token_account_balance(token_account: Account) -> u64 {
     let state = TokenAccount::unpack(token_account.data()).unwrap();
     state.amount
-}
+} */
 
-pub fn mint_account() -> AccountSharedData {
+/* pub fn mint_account() -> AccountSharedData {
     let data = {
         let mut data = [0; Mint::LEN];
         Mint::pack(
@@ -66,13 +66,13 @@ pub fn mint_account() -> AccountSharedData {
     let mut account = AccountSharedData::new(100_000_000, data.len(), &spl_token::id());
     account.set_data_from_slice(&data);
     account
-}
+} */
 
 pub fn system_account(lamports: u64) -> AccountSharedData {
     AccountSharedData::new(lamports, 0, &system_program::id())
 }
 
-pub fn token_account(owner: &Pubkey, mint: &Pubkey, amount: u64) -> AccountSharedData {
+/* pub fn token_account(owner: &Pubkey, mint: &Pubkey, amount: u64) -> AccountSharedData {
     let data = {
         let mut data = [0; TokenAccount::LEN];
         TokenAccount::pack(
@@ -91,4 +91,4 @@ pub fn token_account(owner: &Pubkey, mint: &Pubkey, amount: u64) -> AccountShare
     let mut account = AccountSharedData::new(100_000_000, data.len(), &spl_token::id());
     account.set_data_from_slice(&data);
     account
-}
+} */
