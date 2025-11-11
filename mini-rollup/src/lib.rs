@@ -1,14 +1,18 @@
-/* mod loader;
-mod processor;
+ mod loader;
+/*mod processor;
 mod settler; */
 pub mod transaction;
 
 use {
     crate::{
-       /* loader::PayTubeAccountLoader, settler::PayTubeSettler,*/ transaction::StateChannelTransaction,
+        loader::StateChannelAccountLoader, /* settler::PayTubeSettler,*/ transaction::StateChannelTransaction,
     },
     solana_client::rpc_client::RpcClient,
-    solana_sdk::signature::Keypair,
+    solana_compute_budget::compute_budget::ComputeBudget,
+    solana_sdk::{
+        feature_set::FeatureSet, fee::FeeStructure, hash::Hash, rent_collector::RentCollector,
+        signature::Keypair,
+    },
   /*   solana_svm::transaction_processor::{
         TransactionProcessingConfig, TransactionProcessingEnvironment,
     }, */
@@ -33,5 +37,8 @@ impl StateChannel {
         let fee_structure = FeeStructure::default();
         let lamports_per_signature = fee_structure.lamports_per_signature;
         let rent_collector = RentCollector::default();
+
+        // StateChannel loader/callback implementation.
+        let account_loader = StateChannelAccountLoader::new(&self.rpc_client);
     }
 }
