@@ -4,6 +4,9 @@ mod settler; */
 pub mod transaction;
 
 use {
+    crate::{
+       /* loader::PayTubeAccountLoader, settler::PayTubeSettler,*/ transaction::StateChannelTransaction,
+    },
     solana_client::rpc_client::RpcClient,
     solana_sdk::signature::Keypair,
   /*   solana_svm::transaction_processor::{
@@ -21,5 +24,14 @@ pub struct StateChannel {
 impl StateChannel {
     pub fn new(keys: Vec<Keypair>, rpc_client: RpcClient) -> Self {
         Self { keys, rpc_client }
+    }
+
+    pub fn process_transactions(&self, transactions: &[StateChannelTransaction]) {
+        // PayTube default configs.
+        let compute_budget = ComputeBudget::default();
+        let feature_set = FeatureSet::all_enabled();
+        let fee_structure = FeeStructure::default();
+        let lamports_per_signature = fee_structure.lamports_per_signature;
+        let rent_collector = RentCollector::default();
     }
 }

@@ -12,6 +12,12 @@ use {
     std::collections::HashSet,
 };
 
+pub enum ParkingSpaceStatus {
+    Available,
+    Reserved,
+    Occupied,
+    UnAvailable
+}
 
 pub struct StateChannelTransaction {
     pub sensor_data: Option<u8>,
@@ -19,8 +25,43 @@ pub struct StateChannelTransaction {
     pub from: Option<Pubkey>,
     pub to: Option<Pubkey>,
     pub amount: Option<u64>,
+    pub reservation_duration: Option<u64>,
+    pub reserved_by: Option<Pubkey>,
 }
 
+/* pub struct TransactionBuilder {
+    transactions: Vec<StateChannelTransaction>,
+    rpc_client: RpcClient,
+}
+
+impl TransactionBuilder {
+    pub fn new(rpc_client: RpcClient) -> Self {
+        Self {
+            transactions: Vec::new(),
+            rpc_client,
+        }
+    }
+    
+    pub fn add_svm_transaction(&mut self, transaction: StateChannelTransaction) {
+        self.transactions.push(transaction);
+    }
+    
+    pub fn build(self) -> Vec<StateChannelTransaction> {
+        self.transactions
+    }
+    
+ /*    pub fn process(self, state_channel: &StateChannel) {
+        state_channel.process_state_channel_transfers(&self.transactions);
+    } */
+}
+ */
+/* // Usage:
+let mut builder = PayTubeTransactionBuilder::new(rpc_client);
+builder.add_svm_transaction(tx1);
+builder.add_svm_transaction(tx2);
+builder.process(&channel); */
+
+/* 
 impl From<&StateChannelTransaction> for SolanaInstruction {
     fn from(value: &StateChannelTransaction) -> Self {
         let StateChannelTransaction {
@@ -32,7 +73,12 @@ impl From<&StateChannelTransaction> for SolanaInstruction {
         } = value;
         if let Some(sensor_data) = sensor_data {
             //create instruction to update sensor data
-            return sensor_data;
+//            return sensor_data;
+                Instruction::new_with_bincode(
+                    program_id: Pubkey,
+                    data: &T,
+                    accounts: Vec<AccountMeta>
+                    )
         }
         if let Some(parking_space_status) = parking_space_status {
             //create instruction to update parking space status
@@ -49,65 +95,47 @@ impl From<&StateChannelTransaction> for SolanaInstruction {
 
     pub struct Listing {
     pub maker: Pubkey,
-    #[max_len(32)] 
-    pub email: String,
-    #[max_len(8)] 
-    pub phone: String,
+   
     pub bump: u8, 
-    #[max_len(32)] 
-    pub address: String,
-    pub latitude:f64, 
-    pub longitude:f64,
+  
     pub rental_rate: u32, //per hour
-    pub availabilty_start: i64, //unix time stamp
-    pub availabilty_end: i64,
-    #[max_len(8)] 
-    pub sensor_id: String, 
+   
     pub reserved_by: Option<Pubkey>, 
     pub reservation_start: Option<i64>,
     pub reservation_end: Option<i64>,
     pub parking_space_status:ParkingSpaceStatus, 
     
-    #[max_len(32)]
-    pub additional_info: Option<String>,
-    //date/times avail
-    pub feed: Option<Pubkey>
+    
 }
 
-#[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq)]
-pub enum ParkingSpaceStatus {
-    Available,
-    Reserved,
-    Occupied,
-    UnAvailable
-}
+
             */
             
             return parking_space_status;
-            system_instruction::
+          //  system_instruction:: create manual instruction for parking space status update
         }
-        if let Some(from), Some(to), Some(amount) = (from, to, amount) {
+        if let (Some(from), Some(to), Some(amount)) = (from, to, amount) {
              //https://docs.rs/solana-program/2.0.0/src/solana_program/system_instruction.rs.html#885
         /*
-        Instruction::new_with_bincode(
-         program_id: Pubkey,
-    data: &T,
-    accounts: Vec<AccountMeta>
-    )
+            Instruction::new_with_bincode(
+            program_id: Pubkey,
+            data: &T,
+            accounts: Vec<AccountMeta>
+            )
         */
             system_instruction::transfer(from, to, *amount)
 
         }
     }
-}
+} */
 
-impl From<&PayTubeTransaction> for SolanaTransaction {
+/* impl From<&PayTubeTransaction> for SolanaTransaction {
     fn from(value: &PayTubeTransaction) -> Self {
         SolanaTransaction::new_with_payer(&[SolanaInstruction::from(value)], Some(&value.from))
     }
-}
+} */
 
-impl From<&PayTubeTransaction> for SolanaSanitizedTransaction {
+/* impl From<&PayTubeTransaction> for SolanaSanitizedTransaction {
     fn from(value: &PayTubeTransaction) -> Self {
         SolanaSanitizedTransaction::try_from_legacy_transaction(
             SolanaTransaction::from(value),
@@ -115,12 +143,13 @@ impl From<&PayTubeTransaction> for SolanaSanitizedTransaction {
         )
         .unwrap()
     }
-}
+} */
 
-/// Create a batch of Solana transactions, for the Solana SVM's transaction
+/* /// Create a batch of Solana transactions, for the Solana SVM's transaction
 /// processor, from a batch of PayTube instructions.
 pub fn create_svm_transactions(
     state_channel_transactions: &[StateChannelTransaction],
 ) -> Vec<SolanaSanitizedTransaction> {
    
 }
+ */

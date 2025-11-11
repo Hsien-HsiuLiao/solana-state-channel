@@ -3,9 +3,9 @@ mod create_listing;
 
 
 use {
-    mini_rollup::{transaction::StateChannelTransaction, StateChannel},
+    mini_rollup::{transaction::{StateChannelTransaction, ParkingSpaceStatus}, StateChannel},
     setup::{system_account, TestValidatorContext},
-    create_listing::create_parking_space_listing,
+    create_listing::{create_parking_space_listing, get_rental_rate_from_pda},
     solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer},
 
 };
@@ -32,7 +32,7 @@ fn test_parking_tx() {
     let accounts = vec![
         (homeowner_pubkey, system_account(10_000_000)),
         (driver_pubkey, system_account(10_000_000)),
-        (parking_space_pda, parking_space_account), 
+        (parking_space_pda, parking_space_account.clone()), 
     ];
 
    
@@ -44,15 +44,28 @@ fn test_parking_tx() {
 
     //homeowner creates a parking space listing PDA with  rental rate
    // let parking_space = ParkingSpace::new(homeowner_pubkey, "123 Main St", 100, 100);
+   let actual_rental_rate = get_rental_rate_from_pda(&rpc_client, &parking_space_pda)
+   .expect("PDA account should exist");
+   
+    assert_eq!(actual_rental_rate, rental_rate_usdc, 
+    "Expected rental rate {} but got {}", rental_rate_usdc, actual_rental_rate);
+    //driver reserves a parking space
+    //listingPda parking space status changes to reserved, reservation length is updated, reserved_by is updated
 
     //opens a channel
     let state_channel = StateChannel::new(vec![payer, homeowner, driver], rpc_client);
 
    /*  let mut builder = TransactionBuilder::new(rpc_client);
+   //tx1 - driver arrives at parking space, triggers sensor
+   //tx2 - driver confirms parking and arrival
+   //tx3 - driver leaves parking space, triggers sensor
+   //tx4 - homeowner receives payment, channel closed and txns processed and settled
     builder.add_svm_transaction(tx1);
     builder.add_svm_transaction(tx2);
+    builder.add_svm_transaction(tx3);
+    builder.add_svm_transaction(tx4);
     builder.process(&channel); */
-/*
+
 
     /* 
     driver reserves a parking space
@@ -81,21 +94,20 @@ fn test_parking_tx() {
     */
 
 
-    paytube_channel.process_paytube_transfers(&[
-               PayTubeTransaction {
-            from: will_pubkey,
-            to: alice_pubkey,
-            amount: 1_000_000,
-            mint: None,
+    state_channel.process_transactions(&[
+               StateChannelTransaction {
+            parking_space_status: Some(ParkingSpaceStatus::Reserved),
+            reservation_duration: Some(1_000_000),
+            reserved_by: Some(driver_pubkey),
+            from: None,
+            to: None,
+            amount: None,
+            sensor_data: None,
         },
     ]);
 
-    // Ledger:
-    // Alice:   10_000_000 - 2_000_000 - 2_000_000 + 1_000_000  = 7_000_000
-    // Bob:     10_000_000 + 2_000_000 - 5_000_000 + 2_000_000  = 9_000_000
-    // Will:    10_000_000 + 5_000_000 - 1_000_000              = 14_000_000
+   
     let rpc_client = test_validator.get_rpc_client();
-    assert_eq!(rpc_client.get_balance(&alice_pubkey).unwrap(), 7_000_000);
-    assert_eq!(rpc_client.get_balance(&bob_pubkey).unwrap(), 9_000_000);
-    assert_eq!(rpc_client.get_balance(&will_pubkey).unwrap(), 14_000_000); */
+//    assert_eq!(get_rental_rate_from_pda(&rpc_client, &parking_space_pda).unwrap(), rental_rate_usdc);
+ //assert parking space listing updates
 }
