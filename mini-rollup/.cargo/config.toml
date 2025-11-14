@@ -1,0 +1,10 @@
+[build]
+# Use GCC 14 instead of GCC 15 for better compatibility with RocksDB
+# GCC 15 has stricter C++ standards that can cause compilation errors with RocksDB
+
+[env]
+# Set CC and CXX to use GCC 14 if available, otherwise fall back to system gcc/g++
+# After installing gcc14 package, these will point to the older compiler
+CC = "gcc-14"
+CXX = "g++-14"
+
