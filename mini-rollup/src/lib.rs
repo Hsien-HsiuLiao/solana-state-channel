@@ -22,7 +22,7 @@ use {
     },
     std::sync::Arc,
 
-   // transaction::create_svm_transactions,
+    transaction::create_svm_transactions,
 
     environment::get_environment,
 };
@@ -38,7 +38,7 @@ impl StateChannel {
         Self { keys, rpc_client }
     }
 
-    pub fn process_transactions(&self, _transactions: &[StateChannelTransaction]) {
+    pub fn process_transactions(&self, transactions: &[StateChannelTransaction]) {
         // PayTube default configs.
         let compute_budget = ComputeBudget::default();
         let feature_set = FeatureSet::all_enabled();
@@ -72,10 +72,15 @@ impl StateChannel {
          compute_budget: Some(compute_budget),
          ..Default::default()
      };
-/*
+/* // Usage:
+let mut builder = PayTubeTransactionBuilder::new(rpc_client);
+builder.add_svm_transaction(tx1);
+builder.add_svm_transaction(tx2);
+builder.process(&channel); */
+     
      // 1. Convert to an SVM transaction batch.
      let svm_transactions = create_svm_transactions(transactions);
-
+/*
      // 2. Process transactions with the SVM API.
      let results = processor.load_and_execute_sanitized_transactions(
          &account_loader,
