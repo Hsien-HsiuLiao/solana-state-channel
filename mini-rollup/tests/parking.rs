@@ -5,7 +5,7 @@ mod create_listing;
 use {
     mini_rollup::{transaction::{StateChannelTransaction, ParkingSpaceStatus}, StateChannel},
     setup::{system_account, TestValidatorContext},
-    create_listing::{create_parking_space_listing, /* get_rental_rate_from_pda */},
+    create_listing::{create_parking_space_listing, get_rental_rate_from_pda},
     solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer},
 
 };
@@ -20,7 +20,7 @@ fn test_parking_tx() {
 
     let program_id = Pubkey::new_unique();
 
-    // Create parking space listing PDA account with rental rate stored
+    //homeowner creates a parking space listing PDA with  rental rate
     let rental_rate_usdc = 10_000_000; // 10 USDC
     let (parking_space_pda, parking_space_account) = create_parking_space_listing(
         &homeowner_pubkey,
@@ -42,13 +42,11 @@ fn test_parking_tx() {
 
     let rpc_client = test_validator.get_rpc_client();
 
-    //homeowner creates a parking space listing PDA with  rental rate
-   // let parking_space = ParkingSpace::new(homeowner_pubkey, "123 Main St", 100, 100);
-  /*  let actual_rental_rate = get_rental_rate_from_pda(&rpc_client, &parking_space_pda)
+   let actual_rental_rate = get_rental_rate_from_pda(&rpc_client, &parking_space_pda)
    .expect("PDA account should exist");
    
     assert_eq!(actual_rental_rate, rental_rate_usdc, 
-    "Expected rental rate {} but got {}", rental_rate_usdc, actual_rental_rate); */
+    "Expected rental rate {} but got {}", rental_rate_usdc, actual_rental_rate);
     //driver reserves a parking space
     //listingPda parking space status changes to reserved, reservation length is updated, reserved_by is updated
  /*    StateChannelTransaction {
@@ -60,7 +58,7 @@ fn test_parking_tx() {
         amount: None,
         sensor_data: None,
     } */
-    //opens a channel
+    //after driver reservation confirmed, channel opens
     let state_channel = StateChannel::new(vec![payer, homeowner, driver], rpc_client);
 
    /*  let mut builder = TransactionBuilder::new(rpc_client);
