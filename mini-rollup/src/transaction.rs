@@ -2,24 +2,30 @@
 
 use {
     solana_sdk::{
-        instruction::Instruction as SolanaInstruction,
+        instruction::{AccountMeta, Instruction as SolanaInstruction},
         pubkey::Pubkey,
         system_instruction,
         transaction::{
             SanitizedTransaction as SolanaSanitizedTransaction, Transaction as SolanaTransaction,
         },
+     //   borsh::{BorshSerialize, BorshDeserialize},
+
     },
     std::collections::HashSet,
 };
 
+#[derive(Debug, Clone, Copy,  PartialEq)]
 pub enum ParkingSpaceStatus {
     Available,
     Reserved,
     Occupied,
-    UnAvailable
+    UnAvailable,
+    SensorTriggered,
 }
 
 pub struct StateChannelTransaction {
+    pub program_id: Option<Pubkey>,
+    pub parking_space_pda: Option<Pubkey>,
     pub sensor_data: Option<u8>,
     pub parking_space_status: Option<ParkingSpaceStatus>,
     pub from: Option<Pubkey>,
@@ -73,9 +79,51 @@ impl From<&StateChannelTransaction> for SolanaInstruction {
             amount,
             reservation_duration,
             reserved_by,
+            program_id,
+            parking_space_pda,
         } = value;
 
-        system_instruction::transfer(&from.expect("From is required"), &to.expect("To is required"), amount.expect("Amount is required"))
+        // Handle parking space status updates
+        if let Some(parking_space_status) = parking_space_status {
+            // TODO: Replace with actual program ID and derive listing PDA
+            let program_id = program_id.expect("Program ID is required");
+            let listing_pda = parking_space_pda.expect("Parking space PDA is required");
+            
+            let payer = reserved_by.as_ref().unwrap();
+               
+            
+            // Create instruction data
+            // Format: [instruction_discriminator: u8, status: u8, reserved_by: 32 bytes, reservation_duration: 8 bytes (optional)]
+            let mut data = vec![1u8]; // instruction discriminator for "update_parking_status"
+            data.push(*parking_space_status as u8); // status enum as u8
+            data.extend_from_slice(payer.as_ref()); // reserved_by pubkey (32 bytes)
+            if let Some(duration) = reservation_duration {
+                data.extend_from_slice(&duration.to_le_bytes()); // reservation_duration (8 bytes)
+            } else {
+                data.extend_from_slice(&0u64.to_le_bytes()); // default duration
+            }
+            
+            // Create the instruction with required accounts
+            SolanaInstruction::new_with_bincode(
+                program_id,
+                &data,
+                vec![
+                    AccountMeta::new(listing_pda, false), // listing PDA (mutable)
+                    AccountMeta::new(*payer, true), // payer (signer, writable)
+                ],
+            )
+        } else if let (Some(from), Some(to), Some(amount)) = (from, to, amount) {
+            // Handle transfer transactions
+            system_instruction::transfer(from, to, *amount)
+        } else {
+            // If it's not a transfer or parking update, create a no-op instruction
+            // This should be replaced with actual sensor data instructions
+            system_instruction::transfer(
+                &Pubkey::default(),
+                &Pubkey::default(),
+                0,
+            )
+        }
 
       /*   if let Some(sensor_data) = sensor_data {
             //create instruction to update sensor data
@@ -135,7 +183,20 @@ impl From<&StateChannelTransaction> for SolanaInstruction {
 
 impl From<&StateChannelTransaction> for SolanaTransaction {
     fn from(value: &StateChannelTransaction) -> Self {
-        SolanaTransaction::new_with_payer(&[SolanaInstruction::from(value)], Some(&value.from.expect("From is required")))
+        // For parking space status updates, use reserved_by as payer (or from as fallback)
+        // For transfers, use from as payer
+        let default_payer = Pubkey::default();
+        let payer = if value.parking_space_status.is_some() {
+            // Parking status update: reserved_by takes precedence, then from
+            value.reserved_by
+                .as_ref()
+                .or(value.from.as_ref())
+                .unwrap_or(&default_payer)
+        } else {
+            // Transfer or other: use from
+            value.from.as_ref().unwrap_or(&default_payer)
+        };
+        SolanaTransaction::new_with_payer(&[SolanaInstruction::from(value)], Some(payer))
     }
 }
 

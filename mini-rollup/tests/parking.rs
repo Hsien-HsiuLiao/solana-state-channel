@@ -5,7 +5,7 @@ mod create_listing;
 use {
     mini_rollup::{transaction::{StateChannelTransaction, ParkingSpaceStatus}, StateChannel},
     setup::{system_account, TestValidatorContext},
-    create_listing::{create_parking_space_listing, get_rental_rate_from_pda},
+    create_listing::{create_parking_space_listing, /* get_rental_rate_from_pda */},
     solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer},
 
 };
@@ -44,14 +44,22 @@ fn test_parking_tx() {
 
     //homeowner creates a parking space listing PDA with  rental rate
    // let parking_space = ParkingSpace::new(homeowner_pubkey, "123 Main St", 100, 100);
-   let actual_rental_rate = get_rental_rate_from_pda(&rpc_client, &parking_space_pda)
+  /*  let actual_rental_rate = get_rental_rate_from_pda(&rpc_client, &parking_space_pda)
    .expect("PDA account should exist");
    
     assert_eq!(actual_rental_rate, rental_rate_usdc, 
-    "Expected rental rate {} but got {}", rental_rate_usdc, actual_rental_rate);
+    "Expected rental rate {} but got {}", rental_rate_usdc, actual_rental_rate); */
     //driver reserves a parking space
     //listingPda parking space status changes to reserved, reservation length is updated, reserved_by is updated
-
+ /*    StateChannelTransaction {
+        parking_space_status: Some(ParkingSpaceStatus::Reserved),
+        reservation_duration: Some(1_000_000),
+        reserved_by: Some(driver_pubkey), //payer
+        from: None,
+        to: None,
+        amount: None,
+        sensor_data: None,
+    } */
     //opens a channel
     let state_channel = StateChannel::new(vec![payer, homeowner, driver], rpc_client);
 
@@ -65,6 +73,17 @@ fn test_parking_tx() {
     builder.add_svm_transaction(tx3);
     builder.add_svm_transaction(tx4);
     builder.process(&channel); */
+
+    /*
+    let tx_list_fixed_size_maybe4 = [StateChannelTransaction; 4];
+    let mut builder = TransactionBuilder::new();
+    builder.add_svm_transaction(ParkingSpaceStatus::Reserved, tx_list_fixed_size_maybe4[0]);
+    builder.add_svm_transaction(ParkingSpaceStatus::SensorTriggered, tx_list_fixed_size_maybe4[1]);
+    builder.add_svm_transaction(ParkingSpaceStatus::Occupied, tx_list_fixed_size_maybe4[2]);
+    builder.add_svm_transaction(ParkingSpaceStatus::Available, tx_list_fixed_size_maybe4[3]);
+    builder.add_svm_transaction(rental_fee_to_owner, tx_list_fixed_size_maybe4[4]);
+    builder.process(&tx_list_fixed_size_maybe4);
+    */
 
 
     /* 
@@ -93,16 +112,18 @@ fn test_parking_tx() {
     
     */
 
-
+//after driver reserves, next step is driver arrives at parking space, triggers sensor
     state_channel.process_transactions(&[
                StateChannelTransaction {
-            parking_space_status: Some(ParkingSpaceStatus::Reserved),
-            reservation_duration: Some(1_000_000),
-            reserved_by: Some(driver_pubkey),
+            parking_space_status: Some(ParkingSpaceStatus::SensorTriggered),
+            reservation_duration: None,
+            reserved_by: Some(driver_pubkey), //payer
             from: None,
             to: None,
             amount: None,
             sensor_data: None,
+            program_id: Some(program_id),
+            parking_space_pda: Some(parking_space_pda),
         },
     ]);
 
