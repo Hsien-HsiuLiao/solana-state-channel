@@ -1,13 +1,16 @@
 mod setup;
-mod create_listing;
-
+mod listing_helpers;
 
 use {
     mini_rollup::{transaction::{StateChannelTransaction, ParkingSpaceStatus}, StateChannel},
     setup::{system_account, TestValidatorContext},
-    create_listing::{create_parking_space_listing, get_rental_rate_from_pda},
-    solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer},
-
+    listing_helpers::{create_parking_space_listing, get_rental_rate_from_pda, reserve_parking_space_listing},
+    solana_sdk::{
+        pubkey::Pubkey, 
+        signature::Keypair, 
+        signer::Signer,
+    },
+    solana_client::rpc_client::RpcClient,
 };
 
 #[test]
@@ -26,8 +29,10 @@ fn test_parking_tx() {
         &homeowner_pubkey,
         rental_rate_usdc,
         &program_id,
-        1_000_000, // lamports for rent exemption
-    );
+        None, // reserved_by
+        None, // reservation_duration
+        ParkingSpaceStatus::Available, // parking_space_status
+    ).expect("Failed to create parking space listing");
 
     let accounts = vec![
         (homeowner_pubkey, system_account(10_000_000)),
@@ -42,11 +47,12 @@ fn test_parking_tx() {
 
     let rpc_client = test_validator.get_rpc_client();
 
-   let actual_rental_rate = get_rental_rate_from_pda(&rpc_client, &parking_space_pda)
-   .expect("PDA account should exist");
-   
-    assert_eq!(actual_rental_rate, rental_rate_usdc, 
-    "Expected rental rate {} but got {}", rental_rate_usdc, actual_rental_rate);
+    let pda_rental_rate = get_rental_rate_from_pda(&rpc_client, &parking_space_pda)
+    .expect("PDA account should exist");
+    
+    assert_eq!(pda_rental_rate, rental_rate_usdc, 
+    "Expected rental rate {} but got {}", rental_rate_usdc, pda_rental_rate);
+
     //driver reserves a parking space
     //listingPda parking space status changes to reserved, reservation length is updated, reserved_by is updated
  /*    StateChannelTransaction {
@@ -58,29 +64,29 @@ fn test_parking_tx() {
         amount: None,
         sensor_data: None,
     } */
+
+    // Driver reserves the parking space by sending a transaction
+    let reservation_duration = 1_000_000;
+    let parking_space_pda = reserve_parking_space_listing(
+        &rpc_client, 
+        &homeowner_pubkey, 
+        &driver, 
+        reservation_duration, 
+        &program_id
+    ).expect("Failed to reserve parking space");
+    
     //after driver reservation confirmed, channel opens
     let state_channel = StateChannel::new(vec![payer, homeowner, driver], rpc_client);
 
-   /*  let mut builder = TransactionBuilder::new(rpc_client);
-   //tx1 - driver arrives at parking space, triggers sensor
-   //tx2 - driver confirms parking and arrival
-   //tx3 - driver leaves parking space, triggers sensor
-   //tx4 - homeowner receives payment, channel closed and txns processed and settled
-    builder.add_svm_transaction(tx1);
-    builder.add_svm_transaction(tx2);
-    builder.add_svm_transaction(tx3);
-    builder.add_svm_transaction(tx4);
-    builder.process(&channel); */
 
     /*
     let tx_list_fixed_size_maybe4 = [StateChannelTransaction; 4];
     let mut builder = TransactionBuilder::new();
-    builder.add_svm_transaction(ParkingSpaceStatus::Reserved, tx_list_fixed_size_maybe4[0]);
-    builder.add_svm_transaction(ParkingSpaceStatus::SensorTriggered, tx_list_fixed_size_maybe4[1]);
-    builder.add_svm_transaction(ParkingSpaceStatus::Occupied, tx_list_fixed_size_maybe4[2]);
-    builder.add_svm_transaction(ParkingSpaceStatus::Available, tx_list_fixed_size_maybe4[3]);
-    builder.add_svm_transaction(rental_fee_to_owner, tx_list_fixed_size_maybe4[4]);
-    builder.process(&tx_list_fixed_size_maybe4);
+    builder.add_parking_space_status_update(ParkingSpaceStatus::Reserved, tx_list_fixed_size_maybe4[0]);
+    builder.add_parking_space_status_update(ParkingSpaceStatus::SensorTriggered, tx_list_fixed_size_maybe4[1]);
+    builder.add_parking_space_status_update(ParkingSpaceStatus::Occupied, tx_list_fixed_size_maybe4[2]);
+    builder.add_parking_space_status_update(ParkingSpaceStatus::Available, tx_list_fixed_size_maybe4[3]);
+    builder.add_payment_transaction(rental_fee_to_owner, tx_list_fixed_size_maybe4[4]);
     */
 
 
@@ -97,7 +103,7 @@ fn test_parking_tx() {
     driver leaves parking space, triggers sensor
         parking space status update, payment send to parking space owner
 
-    process end, mini-rollup closed, how?
+    process end, transactions processed and settled
 
     
     struct ParkingSpaceUpdate {
