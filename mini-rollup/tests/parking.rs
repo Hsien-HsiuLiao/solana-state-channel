@@ -1,5 +1,6 @@
 mod setup;
 mod listing_helpers;
+mod tx_builder;
 
 use {
     mini_rollup::{transaction::{StateChannelTransaction, ParkingSpaceStatus}, StateChannel},
@@ -11,6 +12,7 @@ use {
         signer::Signer,
     },
     solana_client::rpc_client::RpcClient,
+    tx_builder::TransactionBuilder,
 };
 
 #[test]
@@ -79,15 +81,21 @@ fn test_parking_tx() {
     let state_channel = StateChannel::new(vec![payer, homeowner, driver], rpc_client);
 
 
-    /*
-    let tx_list_fixed_size_maybe4 = [StateChannelTransaction; 4];
+    // Build transaction list using current values
     let mut builder = TransactionBuilder::new();
-    builder.add_parking_space_status_update(ParkingSpaceStatus::Reserved, tx_list_fixed_size_maybe4[0]);
-    builder.add_parking_space_status_update(ParkingSpaceStatus::SensorTriggered, tx_list_fixed_size_maybe4[1]);
-    builder.add_parking_space_status_update(ParkingSpaceStatus::Occupied, tx_list_fixed_size_maybe4[2]);
-    builder.add_parking_space_status_update(ParkingSpaceStatus::Available, tx_list_fixed_size_maybe4[3]);
-    builder.add_payment_transaction(rental_fee_to_owner, tx_list_fixed_size_maybe4[4]);
-    */
+    builder.set_program_id(program_id);
+    builder.set_parking_space_pda(parking_space_pda);
+    builder.set_driver_pubkey(driver_pubkey);
+    builder.set_homeowner_pubkey(homeowner_pubkey);
+    
+    // Add transactions in sequence
+    builder.add_parking_space_status_update(ParkingSpaceStatus::Reserved);
+    builder.add_parking_space_status_update(ParkingSpaceStatus::SensorTriggered);
+    builder.add_parking_space_status_update(ParkingSpaceStatus::Occupied);
+    builder.add_parking_space_status_update(ParkingSpaceStatus::Available);
+    builder.add_payment_transaction(rental_rate_usdc * reservation_duration);
+    
+    let StateChannelTransactionList = builder.build();
 
 
     /* 
@@ -117,19 +125,7 @@ fn test_parking_tx() {
     */
 
 //after driver reserves, next step is driver arrives at parking space, triggers sensor
-    state_channel.process_transactions(&[
-               StateChannelTransaction {
-            parking_space_status: Some(ParkingSpaceStatus::SensorTriggered),
-            reservation_duration: None,
-            reserved_by: Some(driver_pubkey), //payer
-            from: None,
-            to: None,
-            amount: None,
-            sensor_data: None,
-            program_id: Some(program_id),
-            parking_space_pda: Some(parking_space_pda),
-        },
-    ]);
+    state_channel.process_transactions(&StateChannelTransactionList);
 
    
     let rpc_client = test_validator.get_rpc_client();
