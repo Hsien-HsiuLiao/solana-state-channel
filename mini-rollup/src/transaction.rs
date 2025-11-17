@@ -8,13 +8,14 @@ use {
         transaction::{
             SanitizedTransaction as SolanaSanitizedTransaction, Transaction as SolanaTransaction,
         },
-     //   borsh::{BorshSerialize, BorshDeserialize},
+        
 
     },
     std::collections::HashSet,
+    borsh::{BorshSerialize, BorshDeserialize},
 };
 
-#[derive(Debug, Clone, Copy,  PartialEq)]
+#[derive(Debug, Clone, Copy,  PartialEq, BorshSerialize, BorshDeserialize)]
 pub enum ParkingSpaceStatus {
     Available,
     Reserved,
@@ -26,7 +27,6 @@ pub enum ParkingSpaceStatus {
 pub struct StateChannelTransaction {
     pub program_id: Option<Pubkey>,
     pub parking_space_pda: Option<Pubkey>,
-    pub sensor_data: Option<u8>,
     pub parking_space_status: Option<ParkingSpaceStatus>,
     pub from: Option<Pubkey>,
     pub to: Option<Pubkey>,
@@ -72,7 +72,6 @@ builder.process(&channel); */
 impl From<&StateChannelTransaction> for SolanaInstruction {
     fn from(value: &StateChannelTransaction) -> Self {
         let StateChannelTransaction {
-            sensor_data,
             parking_space_status,
             from,
             to,
