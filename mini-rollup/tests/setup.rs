@@ -33,6 +33,7 @@ impl TestValidatorContext {
         let (test_validator, payer) = TestValidatorGenesis::default()
             .epoch_schedule(epoch_schedule)
             .add_accounts(accounts)
+  //          .add_program(program_id, "fixtures/program.so")//https://docs.rs/solana-test-validator/2.0.2/solana_test_validator/struct.TestValidatorGenesis.html#method.add_program
             .start(); //https://docs.rs/solana-test-validator/2.0.2/src/solana_test_validator/lib.rs.html#622-624
 
         Self {
