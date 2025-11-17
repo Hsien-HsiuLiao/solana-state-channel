@@ -142,7 +142,6 @@ pub fn reserve_parking_space_listing(
         from: None,
         to: None,
         amount: None,
-        sensor_data: None,
         program_id: Some(*program_id),
         parking_space_pda: Some(pda),
     };
