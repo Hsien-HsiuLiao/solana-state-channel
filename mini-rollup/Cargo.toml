@@ -11,7 +11,7 @@ solana-svm = "2.0.0"
 solana-bpf-loader-program = "2.0.0"
 solana-program-runtime = "2.0.0"
 solana-system-program = "2.0.0"
-
+borsh = "1.5.1"
 
 
 
