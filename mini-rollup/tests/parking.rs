@@ -60,11 +60,12 @@ fn test_parking_tx() {
  /*    StateChannelTransaction {
         parking_space_status: Some(ParkingSpaceStatus::Reserved),
         reservation_duration: Some(1_000_000),
-        reserved_by: Some(driver_pubkey), //payer
-        from: None,
-        to: None,
-        amount: None,
-        sensor_data: None,
+        reserved_by_driver: Some(driver_pubkey), //payer
+        homeowner: None,
+        rental_amount_due: None,
+        program_id: None,
+        parking_space_pda: None,
+        rental_rate_per_hour: None,
     } */
 
     // Driver reserves the parking space by sending a transaction
@@ -76,6 +77,7 @@ fn test_parking_tx() {
         reservation_duration, 
         &program_id
     ).expect("Failed to reserve parking space");
+
     
     //after driver reservation confirmed, channel opens
     let state_channel = StateChannel::new(vec![payer, homeowner, driver], rpc_client);
@@ -87,20 +89,20 @@ fn test_parking_tx() {
     builder.set_parking_space_pda(parking_space_pda);
     builder.set_driver_pubkey(driver_pubkey);
     builder.set_homeowner_pubkey(homeowner_pubkey);
+    builder.set_reservation_duration(reservation_duration);
+    builder.set_rental_rate_per_hour(rental_rate_per_hour);
     
     // Add transactions in sequence
-    builder.add_parking_space_status_update(ParkingSpaceStatus::Reserved);
-    builder.add_parking_space_status_update(ParkingSpaceStatus::SensorTriggered);
-    builder.add_parking_space_status_update(ParkingSpaceStatus::Occupied);
-    builder.add_parking_space_status_update(ParkingSpaceStatus::Available);
-    builder.add_payment_transaction(rental_rate_per_hour * reservation_duration / 3600);
+    builder.add_parking_space_status_update(ParkingSpaceStatus::SensorTriggered); //driver's car parked over sensor
+    builder.add_parking_space_status_update(ParkingSpaceStatus::Occupied); //driver confirms parking and arrival
+    builder.add_parking_space_status_update(ParkingSpaceStatus::Available); //driver leaves parking space, triggers sensor
+    builder.add_payment_transaction(); //payment send to parking space owner
     
     let StateChannelTransactionList = builder.build();
 
 
     /* 
-    driver reserves a parking space
-        parking space status changes to reserved
+    
 
     driver arrives at parking space, triggers sensor
         sensor triggers transaction, parking space status step 1
