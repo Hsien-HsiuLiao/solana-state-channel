@@ -14,7 +14,7 @@ use mini_rollup::transaction::{ParkingSpaceStatus, StateChannelTransaction};
 /// Uses Borsh serialization for type-safe account data storage
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 pub struct ParkingSpaceAccountData {
-    pub rental_rate_usdc: u64,
+    pub rental_rate_per_hour: u64,
     pub reserved_by: Option<Pubkey>,
     pub reservation_duration: Option<u64>,
     pub parking_space_status: ParkingSpaceStatus, 
@@ -33,7 +33,7 @@ pub struct ParkingSpaceAccountData {
 /// * `parking_space_status` - Initial status Available
 pub fn create_parking_space_listing(
     homeowner: &Pubkey,
-    rental_rate_usdc: u64,
+    rental_rate_per_hour: u64,
     program_id: &Pubkey,
     reserved_by: Option<Pubkey>,
     reservation_duration: Option<u64>,
@@ -48,7 +48,7 @@ pub fn create_parking_space_listing(
     );
     
     let account_data = ParkingSpaceAccountData {
-        rental_rate_usdc,
+        rental_rate_per_hour,
         reserved_by,
         reservation_duration,
         parking_space_status,
@@ -98,7 +98,7 @@ pub fn get_rental_rate_from_pda(
     let account_data: ParkingSpaceAccountData = borsh::from_slice(&account.data)
         .map_err(|e| format!("Failed to deserialize account data: {}", e))?;
     
-    Ok(account_data.rental_rate_usdc)
+    Ok(account_data.rental_rate_per_hour)
 }
 
 /// Reserve a parking space listing by updating the PDA account data and sending a transaction

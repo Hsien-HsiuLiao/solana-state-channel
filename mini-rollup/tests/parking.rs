@@ -26,10 +26,10 @@ fn test_parking_tx() {
     let program_id = Pubkey::new_unique();
 
     //homeowner creates a parking space listing PDA with  rental rate
-    let rental_rate_usdc = 10_000_000; // 10 USDC
+    let rental_rate_per_hour = 10_000_000; // ~ 10 USDC
     let (parking_space_pda, parking_space_account) = create_parking_space_listing(
         &homeowner_pubkey,
-        rental_rate_usdc,
+        rental_rate_per_hour,
         &program_id,
         None, // reserved_by
         None, // reservation_duration
@@ -37,8 +37,8 @@ fn test_parking_tx() {
     ).expect("Failed to create parking space listing");
 
     let accounts = vec![
-        (homeowner_pubkey, system_account(10_000_000)),
-        (driver_pubkey, system_account(10_000_000)),
+        (homeowner_pubkey, system_account(100_000_000)),
+        (driver_pubkey, system_account(100_000_000)),
         (parking_space_pda, parking_space_account.clone()), 
     ];
 
@@ -52,8 +52,8 @@ fn test_parking_tx() {
     let pda_rental_rate = get_rental_rate_from_pda(&rpc_client, &parking_space_pda)
     .expect("PDA account should exist");
     
-    assert_eq!(pda_rental_rate, rental_rate_usdc, 
-    "Expected rental rate {} but got {}", rental_rate_usdc, pda_rental_rate);
+    assert_eq!(pda_rental_rate, rental_rate_per_hour, 
+    "Expected rental rate {} but got {}", rental_rate_per_hour, pda_rental_rate);
 
     //driver reserves a parking space
     //listingPda parking space status changes to reserved, reservation length is updated, reserved_by is updated
@@ -68,7 +68,7 @@ fn test_parking_tx() {
     } */
 
     // Driver reserves the parking space by sending a transaction
-    let reservation_duration = 1_000_000;
+    let reservation_duration = 35*60; // 35 minutes
     let parking_space_pda = reserve_parking_space_listing(
         &rpc_client, 
         &homeowner_pubkey, 
@@ -93,7 +93,7 @@ fn test_parking_tx() {
     builder.add_parking_space_status_update(ParkingSpaceStatus::SensorTriggered);
     builder.add_parking_space_status_update(ParkingSpaceStatus::Occupied);
     builder.add_parking_space_status_update(ParkingSpaceStatus::Available);
-    builder.add_payment_transaction(rental_rate_usdc * reservation_duration);
+    builder.add_payment_transaction(rental_rate_per_hour * reservation_duration / 3600);
     
     let StateChannelTransactionList = builder.build();
 
