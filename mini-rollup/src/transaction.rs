@@ -1,5 +1,4 @@
 
-
 use {
     solana_sdk::{
         instruction::{AccountMeta, Instruction as SolanaInstruction},
@@ -8,8 +7,6 @@ use {
         transaction::{
             SanitizedTransaction as SolanaSanitizedTransaction, Transaction as SolanaTransaction,
         },
-        
-
     },
     std::collections::HashSet,
     borsh::{BorshSerialize, BorshDeserialize},
@@ -34,40 +31,6 @@ pub struct StateChannelTransaction {
     pub reservation_duration: Option<u64>,
     pub reserved_by: Option<Pubkey>,
 }
-/* 
-pub struct TransactionBuilder {
-    transactions: Vec<StateChannelTransaction>,
-  //  rpc_client: RpcClient,
-}
-
-impl TransactionBuilder {
-    pub fn new(/* rpc_client: RpcClient */) -> Self {
-        Self {
-            transactions: Vec::new(),
-         //   rpc_client,
-        }
-    }
-    
-    pub fn add_svm_transaction(&mut self, transaction: StateChannelTransaction) {
-        self.transactions.push(transaction);
-    }
-    
-    pub fn build(self) -> Vec<StateChannelTransaction> {
-        self.transactions
-    }
-    
- /*    pub fn process(self, state_channel: &StateChannel) {
-        state_channel.process_state_channel_transfers(&self.transactions);
-    } */ 
-    
-} */
- 
-/* // Usage:
-let mut builder = PayTubeTransactionBuilder::new(rpc_client);
-builder.add_svm_transaction(tx1);
-builder.add_svm_transaction(tx2);
-builder.process(&channel); */
-
 
 impl From<&StateChannelTransaction> for SolanaInstruction {
     fn from(value: &StateChannelTransaction) -> Self {
@@ -84,12 +47,11 @@ impl From<&StateChannelTransaction> for SolanaInstruction {
 
         // Handle parking space status updates
         if let Some(parking_space_status) = parking_space_status {
-            // TODO: Replace with actual program ID and derive listing PDA
-            let program_id = program_id.expect("Program ID is required");
-            let listing_pda = parking_space_pda.expect("Parking space PDA is required");
+            println!("Updating parking space status: {:?}", parking_space_status);
+            let program_id = program_id.expect("Program ID is required for parking status update");
+            let listing_pda = parking_space_pda.expect("Parking space PDA is required for parking status update");
             
-            let payer = reserved_by.as_ref().unwrap();
-               
+            let payer = reserved_by.as_ref().expect("reserved_by is required for parking status update");
             
             // Create instruction data
             // Format: [instruction_discriminator: u8, status: u8, reserved_by: 32 bytes, reservation_duration: 8 bytes (optional)]
@@ -112,71 +74,15 @@ impl From<&StateChannelTransaction> for SolanaInstruction {
                 ],
             )
         } else if let (Some(from), Some(to), Some(amount)) = (from, to, amount) {
-            // Handle transfer transactions
+        //https://docs.rs/solana-program/2.0.0/src/solana_program/system_instruction.rs.html#885
+
+            println!("Transferring amount: {:?} from {:?} to {:?}", amount, from, to);
+            // Handle payment transfer transactions
             system_instruction::transfer(from, to, *amount)
         } else {
-            // If it's not a transfer or parking update, create a no-op instruction
-            // This should be replaced with actual sensor data instructions
-            system_instruction::transfer(
-                &Pubkey::default(),
-                &Pubkey::default(),
-                0,
-            )
+            panic!("StateChannelTransaction must be either a parking status update or a payment transfer");
         }
-
-      /*   if let Some(sensor_data) = sensor_data {
-            //create instruction to update sensor data
-//            return sensor_data;
-                Instruction::new_with_bincode(
-                    program_id: Pubkey,
-                    data: &T,
-                    accounts: Vec<AccountMeta>
-                    )
-        } */
-      /*   if let Some(parking_space_status) = parking_space_status {
-            //create instruction to update parking space status
-            /*
-            #[account(
-                mut,
-                seeds = [marketplace.key().as_ref(), 
-                maker.key().as_ref()
-                ], 
-                bump, 
-            /
-            )]
-            pub listing: Account<'info, Listing>,
-
-            pub struct Listing {
-                pub maker: Pubkey,
-            
-                pub bump: u8, 
-    
-                pub rental_rate: u32, //per hour
-            
-                pub reserved_by: Option<Pubkey>, 
-                pub reservation_start: Option<i64>,
-                pub reservation_end: Option<i64>,
-                pub parking_space_status:ParkingSpaceStatus, 
-            }
-
-
-            */
-            
-            return parking_space_status;
-          //  system_instruction:: create manual instruction for parking space status update
-        } */
-      /*   if let (Some(from), Some(to), Some(amount)) = (from, to, amount) {
-             //https://docs.rs/solana-program/2.0.0/src/solana_program/system_instruction.rs.html#885
-        /*
-            Instruction::new_with_bincode(
-            program_id: Pubkey,
-            data: &T,
-            accounts: Vec<AccountMeta>
-            )
-        */
-            system_instruction::transfer(from, to, *amount)
-
-        } */
+      
     }
 }
 
