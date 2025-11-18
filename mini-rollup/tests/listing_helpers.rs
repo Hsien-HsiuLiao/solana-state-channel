@@ -138,12 +138,12 @@ pub fn reserve_parking_space_listing(
     let reserve_tx = StateChannelTransaction {
         parking_space_status: Some(ParkingSpaceStatus::Reserved),
         reservation_duration: Some(rental_duration),
-        reserved_by: Some(driver_pubkey),
-        from: None,
-        to: None,
-        amount: None,
+        reserved_by_driver: Some(driver_pubkey),
+        homeowner: Some(*homeowner),
+        rental_amount_due: None,
         program_id: Some(*program_id),
         parking_space_pda: Some(pda),
+        rental_rate_per_hour: None,
     };
     
     // 3. Convert to Solana transaction and send it
