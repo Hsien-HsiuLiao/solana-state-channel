@@ -1,0 +1,128 @@
+errors when using latest rust and not original cargo.lock file
+
+cargo.toml 2024
+
+error[E0277]: the trait bound `StateChannelAccountLoader<'_>: solana_svm_callback::InvokeContextCallback` is not satisfied
+  --> src/loader.rs:37:40
+   |
+37 | impl TransactionProcessingCallback for StateChannelAccountLoader<'_> {
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `solana_svm_callback::InvokeContextCallback` is not implemented for `StateChannelAccountLoader<'_>`
+   |
+note: required by a bound in `TransactionProcessingCallback`
+  --> /home/h/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-svm-callback-2.3.13/src/lib.rs:35:42
+   |
+35 | pub trait TransactionProcessingCallback: InvokeContextCallback {
+   |                                          ^^^^^^^^^^^^^^^^^^^^^ required by this bound in `TransactionProcessingCallback`
+   = note: `TransactionProcessingCallback` is a "sealed trait", because to implement it you also need to implement `solana_svm_callback::InvokeContextCallback`, which is not accessible; this is usually done to force you to use one of the provided types that already implement it
+   = help: the following types implement the trait:
+             solana_svm::account_loader::AccountLoader<'_, CB>
+             solana_program_runtime::invoke_context::mock_process_instruction_with_feature_set::MockInvokeContextCallback
+
+error[E0277]: the trait bound `StateChannelAccountLoader<'_>: solana_svm_callback::InvokeContextCallback` is not satisfied
+  --> src/loader.rs:50:14
+   |
+50 |         self.get_account_shared_data(account)
+   |              ^^^^^^^^^^^^^^^^^^^^^^^ the trait `solana_svm_callback::InvokeContextCallback` is not implemented for `StateChannelAccountLoader<'_>`
+   |
+note: required by a bound in `get_account_shared_data`
+  --> /home/h/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-svm-callback-2.3.13/src/lib.rs:35:42
+   |
+35 | pub trait TransactionProcessingCallback: InvokeContextCallback {
+   |                                          ^^^^^^^^^^^^^^^^^^^^^ required by this bound in `TransactionProcessingCallback::get_account_shared_data`
+...
+38 |     fn get_account_shared_data(&self, pubkey: &Pubkey) -> Option<AccountSharedData>;
+   |        ----------------------- required by a bound in this associated function
+
+error[E0308]: mismatched types
+   --> src/processor.rs:48:33
+    |
+ 48 |         cache.fork_graph = Some(Arc::new(RwLock::new(StateChannelForkGraph {})));
+    |                            ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Weak<RwLock<StateChannelForkGraph>>`, found `Arc<RwLock<StateChannelForkGraph>>`
+    |                            |
+    |                            arguments to this enum variant are incorrect
+    |
+    = note: expected struct `std::sync::Weak<RwLock<StateChannelForkGraph>>`
+               found struct `Arc<RwLock<StateChannelForkGraph>>`
+help: the type constructed contains `Arc<RwLock<StateChannelForkGraph>>` due to the type of the argument passed
+   --> src/processor.rs:48:28
+    |
+ 48 |         cache.fork_graph = Some(Arc::new(RwLock::new(StateChannelForkGraph {})));
+    |                            ^^^^^-----------------------------------------------^
+    |                                 |
+    |                                 this argument influences the type of `Some`
+note: tuple variant defined here
+   --> /home/h/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:601:5
+    |
+601 |     Some(#[stable(feature = "rust1", since = "1.0.0")] T),
+    |     ^^^^
+
+error[E0308]: arguments to this function are incorrect
+   --> src/processor.rs:53:13
+    |
+ 53 |             create_program_runtime_environment_v1(feature_set, compute_budget, false, false)
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ -----------  -------------- expected `&SVMTransactionExecutionBudget`, found `&ComputeBudget`
+    |                                                   |
+    |                                                   expected `&SVMFeatureSet`, found `&FeatureSet`    
+
+
+    using newer version of rust
+
+     Compiling rocksdb v0.22.0
+   Compiling solana-poh v2.0.1
+   Compiling solana-unified-scheduler-pool v2.0.1
+error[E0282]: type annotations needed for `(_, _)`
+   --> /home/h/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-unified-scheduler-pool-2.0.1/src/lib.rs:218:69
+    |
+218 |                     idle_inners.extend(scheduler_inners.extract_if(|(_inner, pooled_at)| {
+    |                                                                     ^^^^^^^^^^^^^^^^^^^
+219 |                         now.duration_since(*pooled_at) > max_pooling_duration
+    |                                            ---------- type must be known at this point
+    |
+help: consider giving this closure parameter an explicit type, where the placeholders `_` are specified
+    |
+218 |                     idle_inners.extend(scheduler_inners.extract_if(|(_inner, pooled_at): (_, _)| {
+    |                                                                                        ++++++++
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+    --> /home/h/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-unified-scheduler-pool-2.0.1/src/lib.rs:218:57
+     |
+ 218 |                       idle_inners.extend(scheduler_inners.extract_if(|(_inner, pooled_at)| {
+     |  _________________________________________________________^^^^^^^^^^-
+ 219 | |                         now.duration_since(*pooled_at) > max_pooling_duration
+ 220 | |                     }));
+     | |______________________- argument #2 is missing
+     |
+note: method defined here
+    --> /home/h/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:3920:12
+     |
+3920 |     pub fn extract_if<F, R>(&mut self, range: R, filter: F) -> ExtractIf<'_, T, F, A>
+     |            ^^^^^^^^^^
+help: provide the argument
+     |
+ 220 |                     idle_inners.extend(scheduler_inners.extract_if(|(_inner, pooled_at)| {
+ 221 |                         now.duration_since(*pooled_at) > max_pooling_duration
+ 222 ~                     }, /* filter */));
+     |
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+    --> /home/h/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/solana-unified-scheduler-pool-2.0.1/src/lib.rs:249:64
+     |
+ 249 |                       expired_listeners.extend(timeout_listeners.extract_if(
+     |  ________________________________________________________________^^^^^^^^^^-
+ 250 | |                         |(_callback, registered_at)| {
+ 251 | |                             now.duration_since(*registered_at) > timeout_duration
+ 252 | |                         },
+ 253 | |                     ));
+     | |_____________________- argument #2 is missing
+     |
+note: method defined here
+    --> /home/h/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:3920:12
+     |
+3920 |     pub fn extract_if<F, R>(&mut self, range: R, filter: F) -> ExtractIf<'_, T, F, A>
+     |            ^^^^^^^^^^
+help: provide the argument
+     |
+ 249 ~                     expired_listeners.extend(timeout_listeners.extract_if(|(_callback, registered_at)| {
+ 250 +                             now.duration_since(*registered_at) > timeout_duration
+ 251 ~                         }, /* filter */));
+     |
